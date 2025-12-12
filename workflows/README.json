@@ -1,4 +1,0 @@
-{
-  "note": "Положи сюда свой qwen_batch3.json файл",
-  "instructions": "cp /path/to/qwen_batch3.json ./workflows/"
-}
