@@ -10,7 +10,7 @@
 runpod-comfyui-setup/
 ├── setup.sh                     # Основной скрипт установки
 ├── workflows/
-│   └── qwen_batch3.json        # Твой QWEN workflow
+│   └── QWEN_batch_3.json       # Твой QWEN workflow
 └── README.md                   # Эта инструкция
 ```
 
@@ -47,7 +47,7 @@ bash -c "curl -sSL https://raw.githubusercontent.com/ivantey/runPodComfyPipeline
 
 5. Deploy!
 6. Подожди 15-20 минут (скрипт скачает всё)
-7. Открой ComfyUI → Load → qwen_batch3.json → Работает!
+7. Открой ComfyUI → Load → QWEN_batch_3.json → Работает!
 
 ---
 
@@ -63,7 +63,7 @@ curl -sSL https://raw.githubusercontent.com/ivantey/runPodComfyPipeline/master/s
 
 4. Подожди завершения (15-20 минут)
 5. Обнови страницу ComfyUI
-6. Load → qwen_batch3.json → Работает!
+6. Load → QWEN_batch_3.json → Работает!
 
 ---
 
@@ -93,8 +93,8 @@ git push -u origin master
 
 ```bash
 mkdir workflows
-# Скопируй свой qwen_batch3.json в workflows/
-cp /path/to/qwen_batch3.json workflows/
+# Скопируй свой QWEN_batch_3.json в workflows/
+cp /path/to/QWEN_batch_3.json workflows/
 
 git add workflows/
 git commit -m "Add QWEN workflow"
