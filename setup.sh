@@ -1,16 +1,11 @@
 #!/bin/bash
 set -e
 
-# 🚀 Автоматическая настройка ComfyUI для QWEN workflows
-# Автор: AI Assistant
-# Дата: 2025-12-12
-
 echo "======================================================================"
-echo "🚀 ComfyUI Auto Setup Script"
+echo "🚀 ComfyUI Auto Setup Script for QWEN Workflow"
 echo "======================================================================"
-echo ""
 
-# Определяем путь к ComfyUI
+# --- Определяем пути ---
 if [ -d "/workspace/runpod-slim/ComfyUI" ]; then
     COMFY_DIR="/workspace/runpod-slim/ComfyUI"
 elif [ -d "/workspace/ComfyUI" ]; then
@@ -20,277 +15,147 @@ else
     exit 1
 fi
 
-echo "✅ ComfyUI найден: $COMFY_DIR"
+CUSTOM_NODES="$COMFY_DIR/custom_nodes"
+WORKFLOWS_DIR="$COMFY_DIR/user/default/workflows"
+GITHUB_RAW="https://raw.githubusercontent.com/ivantey/runPodComfyPipeline/master"
+
+echo "✅ ComfyUI: $COMFY_DIR"
+
+
+# ============================================================
+# 1. COMFYUI MANAGER
+# ============================================================
 echo ""
+echo "📦 [1/5] ComfyUI Manager..."
 
-# GitHub репозиторий
-GITHUB_REPO="https://raw.githubusercontent.com/ivantey/runPodComfyPipeline/master"
-
-# ============================================================
-# 1. УСТАНОВКА COMFYUI MANAGER (если нет)
-# ============================================================
-echo "📦 Проверяю ComfyUI Manager..."
-
-if [ ! -d "$COMFY_DIR/custom_nodes/ComfyUI-Manager" ]; then
-    echo "   ⬇️  Устанавливаю ComfyUI Manager..."
-    cd $COMFY_DIR/custom_nodes
+if [ ! -d "$CUSTOM_NODES/ComfyUI-Manager" ]; then
+    cd "$CUSTOM_NODES"
     git clone https://github.com/ltdrdata/ComfyUI-Manager.git
-    cd ComfyUI-Manager
-    pip install -q -r requirements.txt
-    echo "   ✅ ComfyUI Manager установлен"
+    pip install -q -r ComfyUI-Manager/requirements.txt
+    echo "   ✅ Установлен"
 else
-    echo "   ✅ ComfyUI Manager уже установлен"
+    echo "   ✅ Уже есть"
 fi
 
+# ============================================================
+# 2. CUSTOM NODES
+# ============================================================
 echo ""
+echo "📦 [2/5] Custom Nodes..."
 
-# ============================================================
-# 2. СКАЧИВАНИЕ WORKFLOWS ИЗ GITHUB
-# ============================================================
-echo "📥 Скачиваю workflows из GitHub..."
+cd "$CUSTOM_NODES"
 
-mkdir -p $COMFY_DIR/user/default/workflows
-cd $COMFY_DIR/user/default/workflows
-
-# Скачиваем твой основной workflow
-if [ ! -f "QWEN_batch_3.json" ]; then
-    echo "   ⬇️  QWEN_batch_3.json..."
-    wget -q $GITHUB_REPO/workflows/QWEN_batch_3.json || echo "   ⚠️  Не удалось скачать (проверь URL)"
-else
-    echo "   ✅ QWEN_batch_3.json уже есть"
-fi
-
-echo ""
-
-# ============================================================
-# 3. АВТОУСТАНОВКА CUSTOM NODES ЧЕРЕЗ MANAGER
-# ============================================================
-echo "📦 Устанавливаю custom nodes через Manager..."
-echo "   (это может занять 5-10 минут)"
-echo ""
-
-# Ждем пока ComfyUI запустится (если еще не запущен)
-COMFY_URL="http://127.0.0.1:8188"
-MAX_WAIT=60
-
-echo "   ⏳ Жду запуска ComfyUI..."
-for i in $(seq 1 $MAX_WAIT); do
-    if curl -s $COMFY_URL > /dev/null 2>&1; then
-        echo "   ✅ ComfyUI запущен"
-        break
+install_node() {
+    local name=$1
+    local url=$2
+    if [ ! -d "$name" ]; then
+        echo "   ⬇️  $name"
+        git clone "$url" 2>/dev/null || echo "   ⚠️  Ошибка: $name"
+    else
+        echo "   ✅ $name"
     fi
-    if [ $i -eq $MAX_WAIT ]; then
-        echo "   ⚠️  ComfyUI не запустился, продолжаю установку вручную..."
-        break
-    fi
-    sleep 2
-done
+}
 
-# Пробуем через Manager API (если ComfyUI запущен)
-if curl -s $COMFY_URL > /dev/null 2>&1; then
-    echo "   📡 Загружаю workflow и устанавливаю недостающие ноды..."
-    
-    # Загружаем workflow через API
-    curl -s -X POST $COMFY_URL/manager/install_missing_nodes \
-        -H "Content-Type: application/json" \
-        -d @$COMFY_DIR/user/default/workflows/QWEN_batch_3.json > /dev/null 2>&1
-    
-    sleep 5
-    echo "   ✅ Custom nodes установлены через Manager"
+install_node "ComfyUI_LayerStyle" "https://github.com/chflame163/ComfyUI_LayerStyle.git"
+install_node "rgthree-comfy" "https://github.com/rgthree/rgthree-comfy.git"
+install_node "ComfyUI-Easy-Use" "https://github.com/yolain/ComfyUI-Easy-Use.git"
+install_node "was-node-suite-comfyui" "https://github.com/WASasquatch/was-node-suite-comfyui.git"
+
+
+# ============================================================
+# 3. ЗАВИСИМОСТИ (через cm-cli)
+# ============================================================
+echo ""
+echo "📦 [3/5] Зависимости..."
+
+cd "$COMFY_DIR"
+
+if [ -f "$CUSTOM_NODES/ComfyUI-Manager/cm-cli.py" ]; then
+    echo "   Запускаю cm-cli restore-dependencies..."
+    python "$CUSTOM_NODES/ComfyUI-Manager/cm-cli.py" restore-dependencies 2>&1 | tail -30 || true
+    echo "   ✅ Готово"
 else
-    # Если ComfyUI не запущен - ставим ноды вручную
-    echo "   📦 Устанавливаю custom nodes вручную..."
-    
-    cd $COMFY_DIR/custom_nodes
-    
-    NODES=(
-        "https://github.com/chflame163/ComfyUI_LayerStyle.git"
-        "https://github.com/rgthree/rgthree-comfy.git"
-        "https://github.com/yolain/ComfyUI-Easy-Use.git"
-        "https://github.com/cubiq/ComfyUI_essentials.git"
-        "https://github.com/lucyknada/ComfyUI_Lucy_Tools.git"
-    )
-    
-    for repo in "${NODES[@]}"; do
-        node_name=$(basename $repo .git)
-        if [ ! -d "$node_name" ]; then
-            echo "      ⬇️  $node_name..."
-            git clone $repo > /dev/null 2>&1
-            
-            if [ -f "$node_name/requirements.txt" ]; then
-                cd $node_name
-                pip install -q -r requirements.txt > /dev/null 2>&1
-                cd ..
-            fi
+    echo "   Устанавливаю вручную..."
+    for dir in "$CUSTOM_NODES"/*/; do
+        if [ -f "$dir/requirements.txt" ]; then
+            pip install -q -r "$dir/requirements.txt" 2>/dev/null || true
         fi
     done
-    
-    echo "   ✅ Custom nodes установлены"
+    echo "   ✅ Готово"
 fi
 
-echo ""
 
 # ============================================================
-# 4. СКАЧИВАНИЕ МОДЕЛЕЙ QWEN
+# 4. МОДЕЛИ QWEN (~6.5GB)
 # ============================================================
-echo "📥 Скачиваю модели QWEN..."
-echo "   (это займет 10-15 минут, ~6.5GB)"
 echo ""
+echo "📥 [4/5] Модели QWEN..."
 
-cd $COMFY_DIR/models
+cd "$COMFY_DIR/models"
 
-# UNET model (5GB)
-echo "   📦 UNET model (5GB)..."
+# Text Encoder
+echo "   📦 Text Encoder..."
+mkdir -p text_encoders && cd text_encoders
+[ ! -f "qwen_2.5_vl_7b_fp8_scaled.safetensors" ] && \
+    wget -q --show-progress "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"
+cd "$COMFY_DIR/models"
+
+# VAE
+echo "   📦 VAE..."
+mkdir -p vae && cd vae
+[ ! -f "qwen_image_vae.safetensors" ] && \
+    wget -q --show-progress "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors"
+cd "$COMFY_DIR/models"
+
+# UNET
+echo "   📦 UNET (5GB)..."
 mkdir -p unet && cd unet
+[ ! -f "qwen_image_edit_2509_fp8_e4m3fn.safetensors" ] && \
+    wget -q --show-progress "https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_2509_fp8_e4m3fn.safetensors"
+cd "$COMFY_DIR/models"
 
-if [ ! -f "qwen_image_edit_2509_fp8_e4m3fn.safetensors" ]; then
-    wget -q --show-progress \
-        https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_2509_fp8_e4m3fn.safetensors
-    echo "   ✅ UNET скачан"
-else
-    echo "   ✅ UNET уже есть"
-fi
-
-cd $COMFY_DIR/models
-
-# LoRA models
-echo ""
-echo "   📦 LoRA models (1.5GB)..."
+# LoRA
+echo "   📦 LoRA..."
 mkdir -p loras && cd loras
+[ ! -f "Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors" ] && \
+    wget -q --show-progress "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Edit-2509/Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors"
+[ ! -f "consistence_edit_v2.safetensors" ] && \
+    wget -q --show-progress "https://huggingface.co/hoveyc/comfyui-models/resolve/main/loras/qwen-image-edit/consistence_edit_v2.safetensors"
 
-# Lightning LoRA (850MB)
-if [ ! -f "Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors" ]; then
-    echo "      ⬇️  Lightning LoRA (850MB)..."
-    wget -q --show-progress \
-        https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Edit-2509/Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors
-    echo "      ✅ Lightning LoRA скачан"
+echo "   ✅ Модели готовы"
+
+
+# ============================================================
+# 5. WORKFLOW
+# ============================================================
+echo ""
+echo "📥 [5/5] Workflow..."
+
+mkdir -p "$WORKFLOWS_DIR"
+cd "$WORKFLOWS_DIR"
+
+if [ ! -f "QWEN_batch_3.json" ]; then
+    wget -q "$GITHUB_RAW/workflows/QWEN_batch_3.json" && echo "   ✅ Скачан" || echo "   ⚠️  Ошибка"
 else
-    echo "      ✅ Lightning LoRA уже есть"
+    echo "   ✅ Уже есть"
 fi
 
-# Consistence LoRA (614MB)
-if [ ! -f "consistence_edit_v2.safetensors" ]; then
-    echo "      ⬇️  Consistence LoRA (614MB)..."
-    wget -q --show-progress \
-        https://huggingface.co/hoveyc/comfyui-models/resolve/main/loras/qwen-image-edit/consistence_edit_v2.safetensors
-    echo "      ✅ Consistence LoRA скачан"
-else
-    echo "      ✅ Consistence LoRA уже есть"
-fi
+# ============================================================
+# ПРОВЕРКА
+# ============================================================
+echo ""
+echo "🔍 Проверка файлов..."
+
+check() { [ -f "$1" ] && echo "   ✅ $(basename $1)" || echo "   ❌ $(basename $1)"; }
+
+check "$COMFY_DIR/models/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"
+check "$COMFY_DIR/models/vae/qwen_image_vae.safetensors"
+check "$COMFY_DIR/models/unet/qwen_image_edit_2509_fp8_e4m3fn.safetensors"
+check "$COMFY_DIR/models/loras/Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors"
+check "$COMFY_DIR/models/loras/consistence_edit_v2.safetensors"
+check "$WORKFLOWS_DIR/QWEN_batch_3.json"
 
 echo ""
-
-# ============================================================
-# 5. ОБНОВЛЕНИЕ ПАКЕТОВ COMFYUI
-# ============================================================
-echo "📦 Обновляю пакеты ComfyUI..."
-echo "   (это может занять несколько минут)"
-echo ""
-
-# Сначала фиксим numpy чтобы не было конфликтов
-echo "   🔧 Фиксим numpy для совместимости..."
-pip install -q "numpy>=2.0.0" 2>/dev/null || pip install -q "numpy>=1.26.0" 2>/dev/null || true
-
-cd $COMFY_DIR
-
-# Обновляем основные пакеты ComfyUI
-if [ -f "requirements.txt" ]; then
-    echo "   ⬇️  Обновляю основные зависимости ComfyUI..."
-    pip install --upgrade -r requirements.txt 2>&1 | grep -v "^Requirement already" | head -20 || true
-    echo "   ✅ Основные пакеты обновлены"
-fi
-
-# Считаем количество custom nodes
-cd $COMFY_DIR/custom_nodes
-TOTAL_NODES=$(ls -d */ 2>/dev/null | wc -l)
-CURRENT_NODE=0
-
-echo ""
-echo "   ⬇️  Обновляю пакеты custom nodes ($TOTAL_NODES шт.)..."
-
-for node_dir in */; do
-    CURRENT_NODE=$((CURRENT_NODE + 1))
-    node_name="${node_dir%/}"
-    
-    if [ -f "$node_dir/requirements.txt" ]; then
-        echo "   [$CURRENT_NODE/$TOTAL_NODES] 📦 $node_name"
-        cd "$node_dir"
-        pip install --upgrade -r requirements.txt 2>&1 | grep -v "^Requirement already" | head -5 || true
-        cd ..
-    else
-        echo "   [$CURRENT_NODE/$TOTAL_NODES] ⏭️  $node_name (skip)"
-    fi
-done
-
-echo "   ✅ Все пакеты обновлены"
-echo ""
-
-# ============================================================
-# 6. КОПИРОВАНИЕ WORKFLOW В НУЖНЫЕ МЕСТА
-# ============================================================
-echo "📂 Копирую workflow в нужные места..."
-
-# Копируем workflow также в корень ComfyUI для удобства
-cp $COMFY_DIR/user/default/workflows/QWEN_batch_3.json $COMFY_DIR/QWEN_batch_3.json 2>/dev/null || true
-
-# Копируем в input папку (некоторые версии ComfyUI ищут там)
-mkdir -p $COMFY_DIR/input
-cp $COMFY_DIR/user/default/workflows/QWEN_batch_3.json $COMFY_DIR/input/QWEN_batch_3.json 2>/dev/null || true
-
-echo "   ✅ Workflow скопирован"
-echo ""
-
-# ============================================================
-# 6. ПРОВЕРКА УСТАНОВКИ
-# ============================================================
-echo "🔍 Проверяю установку..."
-echo ""
-
-# Проверяем модели
-MODELS_OK=true
-
-if [ ! -f "$COMFY_DIR/models/unet/qwen_image_edit_2509_fp8_e4m3fn.safetensors" ]; then
-    echo "   ❌ UNET model не найден"
-    MODELS_OK=false
-else
-    echo "   ✅ UNET model"
-fi
-
-if [ ! -f "$COMFY_DIR/models/loras/Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors" ]; then
-    echo "   ❌ Lightning LoRA не найден"
-    MODELS_OK=false
-else
-    echo "   ✅ Lightning LoRA"
-fi
-
-if [ ! -f "$COMFY_DIR/models/loras/consistence_edit_v2.safetensors" ]; then
-    echo "   ❌ Consistence LoRA не найден"
-    MODELS_OK=false
-else
-    echo "   ✅ Consistence LoRA"
-fi
-
-echo ""
-
-# ============================================================
-# ФИНАЛ
-# ============================================================
 echo "======================================================================"
-
-if [ "$MODELS_OK" = true ]; then
-    echo "🎉 УСТАНОВКА ЗАВЕРШЕНА УСПЕШНО!"
-else
-    echo "⚠️  УСТАНОВКА ЗАВЕРШЕНА С ПРЕДУПРЕЖДЕНИЯМИ"
-    echo "   Некоторые модели не скачались, проверь интернет"
-fi
-
-echo "======================================================================"
-echo ""
-echo "📝 СЛЕДУЮЩИЕ ШАГИ:"
-echo ""
-echo "   ✅ Все готово! ComfyUI запустится автоматически с workflow"
-echo "   ✅ Workflow QWEN_batch_3.json будет загружен автоматически"
-echo ""
-echo "💡 Если есть ошибки - проверь логи ComfyUI"
-echo ""
+echo "🎉 ГОТОВО! Открой ComfyUI → Load → QWEN_batch_3.json"
 echo "======================================================================"
