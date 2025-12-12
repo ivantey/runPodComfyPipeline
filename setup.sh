@@ -211,76 +211,18 @@ echo "   ✅ Все пакеты обновлены"
 echo ""
 
 # ============================================================
-# 6. НАСТРОЙКА АВТОЗАГРУЗКИ WORKFLOW
+# 6. КОПИРОВАНИЕ WORKFLOW В НУЖНЫЕ МЕСТА
 # ============================================================
-echo "⚙️  Настраиваю автозагрузку workflow..."
+echo "📂 Копирую workflow в нужные места..."
 
-# Создаем скрипт автозагрузки
-cat > $COMFY_DIR/autoload_workflow.py << PYEOF
-import json
-import os
-import time
-import requests
+# Копируем workflow также в корень ComfyUI для удобства
+cp $COMFY_DIR/user/default/workflows/QWEN_batch_3.json $COMFY_DIR/QWEN_batch_3.json 2>/dev/null || true
 
-WORKFLOW_PATH = "$COMFY_DIR/user/default/workflows/QWEN_batch_3.json"
-COMFY_URL = "http://127.0.0.1:8188"
+# Копируем в input папку (некоторые версии ComfyUI ищут там)
+mkdir -p $COMFY_DIR/input
+cp $COMFY_DIR/user/default/workflows/QWEN_batch_3.json $COMFY_DIR/input/QWEN_batch_3.json 2>/dev/null || true
 
-def wait_for_comfyui(max_wait=120):
-    """Ждем пока ComfyUI запустится"""
-    print("⏳ Жду запуска ComfyUI...")
-    for i in range(max_wait):
-        try:
-            response = requests.get(f"{COMFY_URL}/system_stats", timeout=2)
-            if response.status_code == 200:
-                print("✅ ComfyUI запущен!")
-                return True
-        except:
-            pass
-        time.sleep(1)
-    return False
-
-def load_workflow():
-    """Загружаем workflow через API"""
-    if not os.path.exists(WORKFLOW_PATH):
-        print(f"❌ Workflow не найден: {WORKFLOW_PATH}")
-        return False
-    
-    try:
-        with open(WORKFLOW_PATH, 'r') as f:
-            workflow = json.load(f)
-        
-        print(f"📥 Загружаю workflow: QWEN_batch_3.json")
-        
-        # Отправляем workflow в ComfyUI
-        response = requests.post(
-            f"{COMFY_URL}/prompt",
-            json={"prompt": workflow}
-        )
-        
-        if response.status_code == 200:
-            print("✅ Workflow загружен успешно!")
-            return True
-        else:
-            print(f"⚠️  Ошибка загрузки: {response.status_code}")
-            return False
-            
-    except Exception as e:
-        print(f"❌ Ошибка: {e}")
-        return False
-
-if __name__ == "__main__":
-    if wait_for_comfyui():
-        time.sleep(3)  # Даем ComfyUI время полностью инициализироваться
-        load_workflow()
-    else:
-        print("❌ ComfyUI не запустился")
-PYEOF
-
-echo "   ✅ Скрипт автозагрузки создан"
-
-# Устанавливаем requests если нет
-pip install -q requests
-
+echo "   ✅ Workflow скопирован"
 echo ""
 
 # ============================================================
