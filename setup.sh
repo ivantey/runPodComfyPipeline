@@ -23,8 +23,8 @@ fi
 echo "✅ ComfyUI найден: $COMFY_DIR"
 echo ""
 
-# GitHub репозиторий (замени на свой!)
-GITHUB_REPO="https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main"
+# GitHub репозиторий
+GITHUB_REPO="https://raw.githubusercontent.com/ivantey/runPodComfyPipeline/master"
 
 # ============================================================
 # 1. УСТАНОВКА COMFYUI MANAGER (если нет)
@@ -53,11 +53,11 @@ mkdir -p $COMFY_DIR/user/default/workflows
 cd $COMFY_DIR/user/default/workflows
 
 # Скачиваем твой основной workflow
-if [ ! -f "qwen_batch3.json" ]; then
-    echo "   ⬇️  qwen_batch3.json..."
-    wget -q $GITHUB_REPO/workflows/qwen_batch3.json || echo "   ⚠️  Не удалось скачать (проверь URL)"
+if [ ! -f "QWEN_batch_3.json" ]; then
+    echo "   ⬇️  QWEN_batch_3.json..."
+    wget -q $GITHUB_REPO/workflows/QWEN_batch_3.json || echo "   ⚠️  Не удалось скачать (проверь URL)"
 else
-    echo "   ✅ qwen_batch3.json уже есть"
+    echo "   ✅ QWEN_batch_3.json уже есть"
 fi
 
 echo ""
@@ -93,7 +93,7 @@ if curl -s $COMFY_URL > /dev/null 2>&1; then
     # Загружаем workflow через API
     curl -s -X POST $COMFY_URL/manager/install_missing_nodes \
         -H "Content-Type: application/json" \
-        -d @$COMFY_DIR/user/default/workflows/qwen_batch3.json > /dev/null 2>&1
+        -d @$COMFY_DIR/user/default/workflows/QWEN_batch_3.json > /dev/null 2>&1
     
     sleep 5
     echo "   ✅ Custom nodes установлены через Manager"
@@ -230,7 +230,7 @@ echo "📝 СЛЕДУЮЩИЕ ШАГИ:"
 echo ""
 echo "   1. Перезапусти ComfyUI (обнови страницу в браузере)"
 echo "   2. Открой ComfyUI: http://your-pod-ip:8188"
-echo "   3. Load → qwen_batch3.json"
+echo "   3. Load → QWEN_batch_3.json"
 echo "   4. Queue Prompt → должно работать БЕЗ ОШИБОК!"
 echo ""
 echo "💡 Если есть ошибки - проверь логи ComfyUI"
