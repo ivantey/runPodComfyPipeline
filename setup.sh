@@ -51,6 +51,10 @@ install_node() {
     if [ ! -d "$name" ]; then
         echo "   ⬇️  $name"
         git clone "$url" 2>/dev/null || echo "   ⚠️  Ошибка: $name"
+        # Устанавливаем зависимости сразу
+        if [ -f "$name/requirements.txt" ]; then
+            pip3 install -q -r "$name/requirements.txt" 2>/dev/null || true
+        fi
     else
         echo "   ✅ $name"
     fi
@@ -63,26 +67,21 @@ install_node "was-node-suite-comfyui" "https://github.com/WASasquatch/was-node-s
 
 
 # ============================================================
-# 3. ЗАВИСИМОСТИ (через cm-cli)
+# 3. ЗАВИСИМОСТИ
 # ============================================================
 echo ""
 echo "📦 [3/5] Зависимости..."
 
-cd "$COMFY_DIR"
+cd "$CUSTOM_NODES"
 
-if [ -f "$CUSTOM_NODES/ComfyUI-Manager/cm-cli.py" ]; then
-    echo "   Запускаю cm-cli restore-dependencies..."
-    python3 "$CUSTOM_NODES/ComfyUI-Manager/cm-cli.py" restore-dependencies 2>&1 | tail -30 || true
-    echo "   ✅ Готово"
-else
-    echo "   Устанавливаю вручную..."
-    for dir in "$CUSTOM_NODES"/*/; do
-        if [ -f "$dir/requirements.txt" ]; then
-            pip install -q -r "$dir/requirements.txt" 2>/dev/null || true
-        fi
-    done
-    echo "   ✅ Готово"
-fi
+# Устанавливаем requirements для всех нод
+for dir in */; do
+    if [ -f "$dir/requirements.txt" ]; then
+        echo "   📦 ${dir%/}"
+        pip3 install -q -r "$dir/requirements.txt" 2>/dev/null || true
+    fi
+done
+echo "   ✅ Готово"
 
 
 # ============================================================
