@@ -67,18 +67,29 @@ install_node "was-node-suite-comfyui" "https://github.com/WASasquatch/was-node-s
 
 
 # ============================================================
-# 3. ЗАВИСИМОСТИ
+# 3. ЗАВИСИМОСТИ (как делает ComfyUI Manager)
 # ============================================================
 echo ""
 echo "📦 [3/5] Зависимости..."
 
 cd "$CUSTOM_NODES"
 
-# Устанавливаем requirements для всех нод
+# Устанавливаем requirements и запускаем install.py для всех нод
 for dir in */; do
+    node_name="${dir%/}"
+    echo "   📦 $node_name"
+    
+    # 1. Устанавливаем pip пакеты из requirements.txt
     if [ -f "$dir/requirements.txt" ]; then
-        echo "   📦 ${dir%/}"
-        pip3 install -q -r "$dir/requirements.txt" 2>/dev/null || true
+        pip3 install -r "$dir/requirements.txt" 2>/dev/null || true
+    fi
+    
+    # 2. Запускаем install.py если есть (как делает ComfyUI Manager)
+    if [ -f "$dir/install.py" ]; then
+        echo "      Running install.py..."
+        cd "$dir"
+        python3 install.py 2>/dev/null || true
+        cd "$CUSTOM_NODES"
     fi
 done
 echo "   ✅ Готово"
