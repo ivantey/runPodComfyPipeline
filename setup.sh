@@ -187,14 +187,16 @@ echo "📦 Обновляю пакеты ComfyUI..."
 echo "   (это может занять несколько минут)"
 echo ""
 
+# Сначала фиксим numpy чтобы не было конфликтов
+echo "   🔧 Фиксим numpy для совместимости..."
+pip install -q "numpy>=2.0.0" 2>/dev/null || pip install -q "numpy>=1.26.0" 2>/dev/null || true
+
 cd $COMFY_DIR
 
 # Обновляем основные пакеты ComfyUI
 if [ -f "requirements.txt" ]; then
     echo "   ⬇️  Обновляю основные зависимости ComfyUI..."
-    pip install --upgrade -r requirements.txt 2>&1 | while read line; do
-        echo "      $line"
-    done
+    pip install --upgrade -r requirements.txt 2>&1 | grep -v "^Requirement already" | head -20 || true
     echo "   ✅ Основные пакеты обновлены"
 fi
 
@@ -205,7 +207,6 @@ CURRENT_NODE=0
 
 echo ""
 echo "   ⬇️  Обновляю пакеты custom nodes ($TOTAL_NODES шт.)..."
-echo ""
 
 for node_dir in */; do
     CURRENT_NODE=$((CURRENT_NODE + 1))
@@ -214,14 +215,10 @@ for node_dir in */; do
     if [ -f "$node_dir/requirements.txt" ]; then
         echo "   [$CURRENT_NODE/$TOTAL_NODES] 📦 $node_name"
         cd "$node_dir"
-        pip install --upgrade -r requirements.txt 2>&1 | while read line; do
-            echo "      $line"
-        done
+        pip install --upgrade -r requirements.txt 2>&1 | grep -v "^Requirement already" | head -5 || true
         cd ..
-        echo "   [$CURRENT_NODE/$TOTAL_NODES] ✅ $node_name готов"
-        echo ""
     else
-        echo "   [$CURRENT_NODE/$TOTAL_NODES] ⏭️  $node_name (нет requirements.txt)"
+        echo "   [$CURRENT_NODE/$TOTAL_NODES] ⏭️  $node_name (skip)"
     fi
 done
 
@@ -244,7 +241,7 @@ echo "   ✅ Workflow скопирован"
 echo ""
 
 # ============================================================
-# 7. ПРОВЕРКА УСТАНОВКИ
+# 6. ПРОВЕРКА УСТАНОВКИ
 # ============================================================
 echo "🔍 Проверяю установку..."
 echo ""
