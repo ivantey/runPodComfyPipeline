@@ -184,26 +184,44 @@ echo ""
 # 5. ОБНОВЛЕНИЕ ПАКЕТОВ COMFYUI
 # ============================================================
 echo "📦 Обновляю пакеты ComfyUI..."
+echo "   (это может занять несколько минут)"
+echo ""
 
 cd $COMFY_DIR
 
 # Обновляем основные пакеты ComfyUI
 if [ -f "requirements.txt" ]; then
-    echo "   ⬇️  Обновляю основные зависимости..."
-    pip install -q --upgrade -r requirements.txt
+    echo "   ⬇️  Обновляю основные зависимости ComfyUI..."
+    pip install --upgrade -r requirements.txt 2>&1 | while read line; do
+        echo "      $line"
+    done
     echo "   ✅ Основные пакеты обновлены"
 fi
 
-# Обновляем пакеты всех custom nodes
-echo "   ⬇️  Обновляю пакеты custom nodes..."
+# Считаем количество custom nodes
 cd $COMFY_DIR/custom_nodes
+TOTAL_NODES=$(ls -d */ 2>/dev/null | wc -l)
+CURRENT_NODE=0
+
+echo ""
+echo "   ⬇️  Обновляю пакеты custom nodes ($TOTAL_NODES шт.)..."
+echo ""
 
 for node_dir in */; do
+    CURRENT_NODE=$((CURRENT_NODE + 1))
+    node_name="${node_dir%/}"
+    
     if [ -f "$node_dir/requirements.txt" ]; then
-        echo "      📦 $node_dir"
+        echo "   [$CURRENT_NODE/$TOTAL_NODES] 📦 $node_name"
         cd "$node_dir"
-        pip install -q --upgrade -r requirements.txt 2>/dev/null || true
+        pip install --upgrade -r requirements.txt 2>&1 | while read line; do
+            echo "      $line"
+        done
         cd ..
+        echo "   [$CURRENT_NODE/$TOTAL_NODES] ✅ $node_name готов"
+        echo ""
+    else
+        echo "   [$CURRENT_NODE/$TOTAL_NODES] ⏭️  $node_name (нет requirements.txt)"
     fi
 done
 
