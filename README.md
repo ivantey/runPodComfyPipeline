@@ -227,3 +227,4 @@ wget https://huggingface.co/hoveyc/comfyui-models/resolve/main/loras/qwen-image-
 ---
 
 **Создано с ❤️ для автоматизации ComfyUI на RunPod**
+# runPodComfyPipeline
