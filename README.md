@@ -42,7 +42,7 @@ runpod-comfyui-setup/
 4. Вставь:
 
 ```bash
-bash -c "curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/runpod-comfyui-setup/main/setup.sh | bash && python /workspace/runpod-slim/main.py"
+bash -c "curl -sSL https://raw.githubusercontent.com/ivantey/runPodComfyPipeline/master/setup.sh | bash && python /workspace/runpod-slim/main.py"
 ```
 
 5. Deploy!
@@ -58,7 +58,7 @@ bash -c "curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/runpod-comfyu
 3. Выполни:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/runpod-comfyui-setup/main/setup.sh | bash
+curl -sSL https://raw.githubusercontent.com/ivantey/runPodComfyPipeline/master/setup.sh | bash
 ```
 
 4. Подожди завершения (15-20 минут)
@@ -85,8 +85,8 @@ git add .
 git commit -m "Initial commit"
 
 # Создай репозиторий на GitHub и загрузи
-git remote add origin https://github.com/YOUR_USERNAME/runpod-comfyui-setup.git
-git push -u origin main
+git remote add origin https://github.com/ivantey/runPodComfyPipeline.git
+git push -u origin master
 ```
 
 ### 2. Положи свой workflow:
@@ -145,7 +145,7 @@ ls -la /workspace/runpod-slim/ComfyUI/user/default/workflows/
 ### Запустить установку заново:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/runpod-comfyui-setup/main/setup.sh | bash
+curl -sSL https://raw.githubusercontent.com/ivantey/runPodComfyPipeline/master/setup.sh | bash
 ```
 
 ### Логи ComfyUI:
@@ -162,7 +162,7 @@ tail -f /workspace/runpod-slim/ComfyUI/comfyui.log
 
 **Решение:**
 - Проверь что репозиторий **публичный** (не private)
-- Проверь URL: `https://raw.githubusercontent.com/YOUR_USERNAME/runpod-comfyui-setup/main/setup.sh`
+- Проверь URL: `https://raw.githubusercontent.com/ivantey/runPodComfyPipeline/master/setup.sh`
 - Открой URL в браузере, должен показать содержимое скрипта
 
 ### Проблема: Custom nodes не установились
