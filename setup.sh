@@ -72,7 +72,7 @@ cd "$COMFY_DIR"
 
 if [ -f "$CUSTOM_NODES/ComfyUI-Manager/cm-cli.py" ]; then
     echo "   Запускаю cm-cli restore-dependencies..."
-    python "$CUSTOM_NODES/ComfyUI-Manager/cm-cli.py" restore-dependencies 2>&1 | tail -30 || true
+    python3 "$CUSTOM_NODES/ComfyUI-Manager/cm-cli.py" restore-dependencies 2>&1 | tail -30 || true
     echo "   ✅ Готово"
 else
     echo "   Устанавливаю вручную..."
