@@ -181,7 +181,80 @@ fi
 echo ""
 
 # ============================================================
-# 5. ПРОВЕРКА УСТАНОВКИ
+# 5. НАСТРОЙКА АВТОЗАГРУЗКИ WORKFLOW
+# ============================================================
+echo "⚙️  Настраиваю автозагрузку workflow..."
+
+# Создаем скрипт автозагрузки
+cat > $COMFY_DIR/autoload_workflow.py << 'PYEOF'
+import json
+import os
+import time
+import requests
+
+WORKFLOW_PATH = "/workspace/runpod-slim/ComfyUI/user/default/workflows/QWEN_batch_3.json"
+COMFY_URL = "http://127.0.0.1:8188"
+
+def wait_for_comfyui(max_wait=120):
+    """Ждем пока ComfyUI запустится"""
+    print("⏳ Жду запуска ComfyUI...")
+    for i in range(max_wait):
+        try:
+            response = requests.get(f"{COMFY_URL}/system_stats", timeout=2)
+            if response.status_code == 200:
+                print("✅ ComfyUI запущен!")
+                return True
+        except:
+            pass
+        time.sleep(1)
+    return False
+
+def load_workflow():
+    """Загружаем workflow через API"""
+    if not os.path.exists(WORKFLOW_PATH):
+        print(f"❌ Workflow не найден: {WORKFLOW_PATH}")
+        return False
+    
+    try:
+        with open(WORKFLOW_PATH, 'r') as f:
+            workflow = json.load(f)
+        
+        print(f"📥 Загружаю workflow: QWEN_batch_3.json")
+        
+        # Отправляем workflow в ComfyUI
+        response = requests.post(
+            f"{COMFY_URL}/prompt",
+            json={"prompt": workflow}
+        )
+        
+        if response.status_code == 200:
+            print("✅ Workflow загружен успешно!")
+            return True
+        else:
+            print(f"⚠️  Ошибка загрузки: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Ошибка: {e}")
+        return False
+
+if __name__ == "__main__":
+    if wait_for_comfyui():
+        time.sleep(3)  # Даем ComfyUI время полностью инициализироваться
+        load_workflow()
+    else:
+        print("❌ ComfyUI не запустился")
+PYEOF
+
+echo "   ✅ Скрипт автозагрузки создан"
+
+# Устанавливаем requests если нет
+pip install -q requests
+
+echo ""
+
+# ============================================================
+# 6. ПРОВЕРКА УСТАНОВКИ
 # ============================================================
 echo "🔍 Проверяю установку..."
 echo ""
@@ -228,10 +301,8 @@ echo "======================================================================"
 echo ""
 echo "📝 СЛЕДУЮЩИЕ ШАГИ:"
 echo ""
-echo "   1. Перезапусти ComfyUI (обнови страницу в браузере)"
-echo "   2. Открой ComfyUI: http://your-pod-ip:8188"
-echo "   3. Load → QWEN_batch_3.json"
-echo "   4. Queue Prompt → должно работать БЕЗ ОШИБОК!"
+echo "   ✅ Все готово! ComfyUI запустится автоматически с workflow"
+echo "   ✅ Workflow QWEN_batch_3.json будет загружен автоматически"
 echo ""
 echo "💡 Если есть ошибки - проверь логи ComfyUI"
 echo ""

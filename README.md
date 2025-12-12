@@ -42,7 +42,7 @@ runpod-comfyui-setup/
 4. Вставь:
 
 ```bash
-bash -c "curl -sSL https://raw.githubusercontent.com/ivantey/runPodComfyPipeline/master/setup.sh | bash && python /workspace/runpod-slim/main.py"
+bash -c "curl -sSL https://raw.githubusercontent.com/ivantey/runPodComfyPipeline/master/setup.sh | bash && (python /workspace/runpod-slim/ComfyUI/autoload_workflow.py &) && python /workspace/runpod-slim/main.py"
 ```
 
 5. Deploy!
