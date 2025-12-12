@@ -216,13 +216,13 @@ echo ""
 echo "⚙️  Настраиваю автозагрузку workflow..."
 
 # Создаем скрипт автозагрузки
-cat > $COMFY_DIR/autoload_workflow.py << 'PYEOF'
+cat > $COMFY_DIR/autoload_workflow.py << PYEOF
 import json
 import os
 import time
 import requests
 
-WORKFLOW_PATH = "/workspace/runpod-slim/ComfyUI/user/default/workflows/QWEN_batch_3.json"
+WORKFLOW_PATH = "$COMFY_DIR/user/default/workflows/QWEN_batch_3.json"
 COMFY_URL = "http://127.0.0.1:8188"
 
 def wait_for_comfyui(max_wait=120):
